@@ -16,6 +16,7 @@ public class QLearnerAI extends AIModule{
     int k = 1;
     static final double MIN = -1;
     static final double MAX = +1;
+    static final double TIE = 0;
 
     Random r = new Random();
 
@@ -172,16 +173,23 @@ public class QLearnerAI extends AIModule{
 
         //if game is over after your move then you must have won. Only possible reward at this state is 1.
         if(game.isGameOver()){
-            reward = 1.0;
+            if(game.getWinner() == 0){
+                reward = TIE;
+                qf = 0.0;
+            }
+            reward = MIN;
             qf = 0.0;
-            //System.out.println(state);
         }
         else{
             Board theirBoard = getStateActionValues(game);
             int theirMove = selectMove(theirBoard.legalActions, theirBoard.q_values, false);
             game.makeMove(theirMove);
             if(game.isGameOver()){
-                reward = -1.0;
+                if(game.getWinner() == 0){
+                    reward = TIE;
+                    qf = 0.0;
+                }
+                reward = MIN;
                 qf = 0.0;
             }
             else{
