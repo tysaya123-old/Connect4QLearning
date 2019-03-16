@@ -18,6 +18,16 @@ public class QLearnerAI extends AIModule{
     static final double WIN_REWARD = +1;
     static final double TIE_REWARD = 0;
 
+    static final int WIDTH = 5;
+    static final int HEIGHT = 4;
+    int[][] rewardMat = {
+            { 1,1,1,1 },
+            { 2,2,2,2 },
+            { 3,4,4,2 },
+            { 2,2,2,2 },
+            { 1,1,1,1 },
+    };
+
     Random r = new Random();
 
     public QLearnerAI(int is_training){
@@ -222,7 +232,13 @@ public class QLearnerAI extends AIModule{
             }
             else{
                 //TODO: place eval reward func here.(use copy game)
-                return 0.0;
+                int reward = 0;
+                for(int i = 0; i < WIDTH; i++){
+                    for (int j = 0; j < HEIGHT; j++) {
+                        reward += rewardMat[i][j]*game.getAt(i, j);
+                    }
+                }
+                return Double.valueOf(reward)/24.0;
             }
         }
     }
