@@ -14,9 +14,9 @@ public class QLearnerAI extends AIModule{
     int is_training;
 
     int k = 1;
-    static final double MIN = -1;
-    static final double MAX = +1;
-    static final double TIE = 0;
+    static final double LOSS_REWARD = -1;
+    static final double WIN_REWARD = +1;
+    static final double TIE_REWARD = 0;
 
     Random r = new Random();
 
@@ -127,11 +127,11 @@ public class QLearnerAI extends AIModule{
             Double prob = r.nextDouble();
             Double denom = 0.0;
             for(int i = 0; i < legalActions.size(); i++){
-                denom += Math.pow(k, getQ(q_values, legalActions.get(i)));
+                denom += Math.pow(k, getQi(q_values, legalActions.get(i)));
             }
             Double numer = 0.0;
             for(int i = 0; i < legalActions.size(); i++){
-                numer += Math.pow(k, getQ(q_values, legalActions.get(i)));
+                numer += Math.pow(k, getQi(q_values, legalActions.get(i)));
                 if(prob <= numer/denom) return legalActions.get(i);
             }
 
@@ -141,16 +141,16 @@ public class QLearnerAI extends AIModule{
         }
         else{
             int currMove = legalActions.get(r.nextInt(legalActions.size()));
-            Double currBest = getQ(q_values, currMove);
-            System.out.println("=========================");
+            Double currBest = getQi(q_values, currMove);
+            //System.out.println("=========================");
             for(int i = 0; i < legalActions.size(); i++){
-                System.out.println("Col: " + legalActions.get(i) + " is " + getQ(q_values, legalActions.get(i)));
-                if(getQ(q_values, legalActions.get(i)) > currBest){
-                    currBest = getQ(q_values, legalActions.get(i));
+                //System.out.println("Col: " + legalActions.get(i) + " is " + getQi(q_values, legalActions.get(i)));
+                if(getQi(q_values, legalActions.get(i)) > currBest){
+                    currBest = getQi(q_values, legalActions.get(i));
                     currMove = legalActions.get(i);
-                } 
+                }
             }
-            System.out.println("=========================");
+            //System.out.println("=========================");
             return currMove;
         }
     }
@@ -158,60 +158,74 @@ public class QLearnerAI extends AIModule{
     private void updateQTable(GameStateModule game, Board curr_board){
 
         String state = curr_board.state;
-        int[] count = state_action_count.get(state);
-        Double numVisited = Double.valueOf(count[chosenMove]);
-        count[chosenMove]++;
-        state_action_count.put(state, count);
+        int[] counts = state_action_count.get(state);
+        Double count = Double.valueOf(counts[chosenMove]);
 
-        Double alpha = 1/(1+numVisited);
+        Double reward = getReward(game, chosenMove);
+        Double qf = getQf(game, chosenMove);
+        Double qi = getQi(curr_board.q_values, chosenMove);
 
-        Double reward = 0.0;
-        Double qf = MIN;
+        Double alpha = 1/(1+count);
 
-        Double qi = getQ(curr_board.q_values, chosenMove);
-        game.makeMove(chosenMove);
-
-        //if game is over after your move then you must have won. Only possible reward at this state is 1.
-        if(game.isGameOver()){
-            if(game.getWinner() == 0){
-                reward = TIE;
-                qf = 0.0;
-            }
-            reward = MIN;
-            qf = 0.0;
-        }
-        else{
-            Board theirBoard = getStateActionValues(game);
-            int theirMove = selectMove(theirBoard.legalActions, theirBoard.q_values, false);
-            game.makeMove(theirMove);
-            if(game.isGameOver()){
-                if(game.getWinner() == 0){
-                    reward = TIE;
-                    qf = 0.0;
-                }
-                reward = MIN;
-                qf = 0.0;
-            }
-            else{
-                Board nextBoard = getStateActionValues(game);
-                for(int i = 0; i < nextBoard.q_values.length; i++){
-                    Double curr_q = getQ(nextBoard.q_values, i);
-                    if(curr_q > qf) qf = curr_q;
-                }
-                reward = getReward(game);
-            }
-        }
         curr_board.q_values[chosenMove] = Double.toString((1 - alpha)*qi + alpha*(reward + gamma*qf));
         state_action_values.put(state, curr_board.q_values);
+
+
+        counts[chosenMove]++;
+        state_action_count.put(state, counts);
         // update q(s, a) and count(s, a)
     }
 
-    private Double getQ(String[] qs, int move){
+    private Double getQi(String[] qs, int move){
         return Double.parseDouble(qs[move]);
     }
 
-    private Double getReward(GameStateModule game){
-        return 0.0;
+    private Double getQf(GameStateModule game, int yourMove) {
+        GameStateModule copyGame = game.copy();
+
+        copyGame.makeMove(yourMove);
+        if(copyGame.isGameOver()) return 0.0;
+
+        Board theirBoard = getStateActionValues(copyGame);
+        int theirMove = selectMove(theirBoard.legalActions, theirBoard.q_values, false);
+
+        copyGame.makeMove(theirMove);
+        if(copyGame.isGameOver()) return 0.0;
+        else {
+            Board nextBoard = getStateActionValues(copyGame);
+            Double qf = LOSS_REWARD;
+            for (int i = 0; i < nextBoard.q_values.length; i++) {
+                Double curr_q = getQi(nextBoard.q_values, i);
+                if (curr_q > qf) qf = curr_q;
+            }
+            return qf;
+        }
     }
+
+    private Double getReward(GameStateModule game, int yourMove) {
+        GameStateModule copyGame = game.copy();
+        copyGame.makeMove(yourMove);
+        if(copyGame.isGameOver()){
+            return WIN_REWARD;
+        }
+        else {
+            Board theirBoard = getStateActionValues(copyGame);
+            int theirMove = selectMove(theirBoard.legalActions, theirBoard.q_values, false);
+            copyGame.makeMove(theirMove);
+            if (copyGame.isGameOver()) {
+                if(copyGame.getWinner() == 0){
+                    return TIE_REWARD;
+                }
+                else{
+                    return LOSS_REWARD;
+                }
+            }
+            else{
+                //TODO: place eval reward func here.(use copy game)
+                return 0.0;
+            }
+        }
+    }
+
 
 }
