@@ -137,7 +137,7 @@ public class Main
 //		                }:q!:q:
 				else if(args[i].equalsIgnoreCase("-seed"))
 				{
-			                seed = Integer.parseInt(args[i + 1]);
+					seed = Integer.parseInt(args[i + 1]);
 				}
 				else
 					throw new IllegalArgumentException();

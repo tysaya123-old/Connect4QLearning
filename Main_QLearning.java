@@ -241,6 +241,12 @@ public class Main_QLearning
             if (!dir.exists()){
                 dir.mkdir();
             }
+            BufferedWriter[] writers = new BufferedWriter[width * height + 1];
+
+            for(int i = 0; i < width * height + 1; i++){
+                writers[i] = new BufferedWriter(new FileWriter(new File("qtables/" + i + ".txt")));
+            }
+
             for(String state : QLearnerAI.state_action_values.keySet()){
                 int nonzeros = 0;
                 for (int i=0;i<state.length();i++){
@@ -248,15 +254,15 @@ public class Main_QLearning
                         nonzeros += 1;
                 }
 
-                File f = new File("qtables/" + nonzeros + ".txt");
-                BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
                 String[] values = QLearnerAI.state_action_values.get(state);
                 String buffer = state + ":";
                 for(String v : values){
                     buffer += v + " ";
                 }
-                bw.write(buffer + "\n");
-                bw.close();
+                writers[nonzeros].write(buffer + "\n");
+            }
+            for(int i = 0; i < width * height + 1; i++){
+                writers[i].close();
             }
 
         }catch (Exception exc){

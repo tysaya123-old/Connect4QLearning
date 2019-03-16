@@ -10,7 +10,7 @@ import java.util.Arrays;
  * to play a game of Connect Four.  You will not need to modify the contents
  * of this class, though it may be useful to glance over its contents before writing
  * your AI implementation.
- * 
+ *
  * @author Leonid Shamis
  */
 public final class GameController
@@ -205,8 +205,8 @@ public final class GameController
 				{
 					game.makeMove(j);
 					System.err.println("Attempted to play illegal move " + move +
-									   ".  Computer automatically played legal move " + j +
-									   " instead.");
+							".  Computer automatically played legal move " + j +
+							" instead.");
 					break;
 				}
 		}
