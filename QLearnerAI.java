@@ -47,11 +47,6 @@ public class QLearnerAI extends AIModule{
 
     }
 
-    private void seed(){
-
-    }
-
-
     @Override
     public void getNextMove(GameStateModule game) {
         if (is_training == 1){
